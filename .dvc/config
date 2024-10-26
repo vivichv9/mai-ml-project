@@ -1,0 +1,7 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = s3://dvc_ml_project/dvc-store
+    region = ru-central1
+    endpointurl=https://hb.ru-msk.vkcloud-storage.ru
+
