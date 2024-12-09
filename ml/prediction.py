@@ -69,7 +69,3 @@ class BrokeClassification:
     def prediction(self, data):
         prediction = self.model.predict(data=data, prediction_type="Class")
         return prediction
-
-
-def main():
-    br = 1
