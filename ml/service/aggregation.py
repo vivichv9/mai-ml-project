@@ -1,34 +1,21 @@
 import logging
-import os
 
 import pandas as pd
-import psycopg2
-from dotenv import load_dotenv
-from psycopg2 import Error
 
 
 class Aggregation:
-    def __init__(self, env_path="../.env"):
-        load_dotenv(env_path)
-        self.PG_USER: str = os.getenv("PG_USER")
-        self.PG_PASSWORD: str = os.getenv("PG_PASSWORD")
-        self.PG_HOST: str = os.getenv("PG_HOST")
-        self.PG_PORT: str = os.getenv("PG_PORT")
-        self.PG_DATABASE: str = os.getenv("PG_DATABASE")
+    def __init__(self):
         self.data: pd.DataFrame = None
 
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
         )
 
-    def aggregate_data(self):
+    async def aggregate_data(self):
         query = """
+        WITH ride_aggregates AS (
         SELECT
-            d.age,
-            d.user_rating,
-            d.user_rides,
-            d.user_time_accident,
-            d.sex,
+            r.car_id,
             COUNT(r.ride_id) AS total_rides,
             AVG(r.rating) AS average_rating,
             MIN(r.rating) AS min_rating,
@@ -43,59 +30,70 @@ class Aggregation:
             SUM(r.refueling) AS total_refuelings,
             AVG(r.user_ride_quality) AS average_ride_quality,
             MIN(r.user_ride_quality) AS min_ride_quality,
-            AVG(r.deviation_normal) AS average_deviation_normal,
-            ct.model,
-            ct.car_type,
-            ct.fuel_type,
-            ct.car_rating,
-            ct.year_to_start,
-            ct.riders,
-            ct.year_to_work,
-            ct.target_reg,
-            ct.target_class
+            AVG(r.deviation_normal) AS average_deviation_normal
         FROM
-            driver_info d
-        LEFT JOIN
             rides_info r
-        ON
-            d.user_id = r.user_id
-        LEFT JOIN
-            car_train ct
-        ON
-            r.car_id = ct.car_id
+        JOIN
+            driver_info d ON d.user_id = r.user_id
         WHERE
             r.ride_duration < 300
             AND r.distance < 7000
             AND r.ride_cost <= 4000
         GROUP BY
-            d.age,
-            d.user_rating,
-            d.user_rides,
-            d.user_time_accident,
-            d.sex,
-            ct.model,
-            ct.car_type,
-            ct.fuel_type,
-            ct.car_rating,
-            ct.year_to_start,
-            ct.riders,
-            ct.year_to_work,
-            ct.target_reg,
-            ct.target_class;
-        """
+            r.car_id
+        ),
+        car_details AS (
+            SELECT
+                ct.car_id,
+                ct.model,
+                ct.car_type,
+                ct.fuel_type,
+                ct.car_rating,
+                ct.year_to_start,
+                ct.riders,
+                ct.year_to_work,
+                ct.target_reg,
+                ct.target_class
+            FROM
+                car_train ct
+        )
+
+            SELECT
+                cd.car_id,
+                cd.model,
+                cd.car_type,
+                cd.fuel_type,
+                cd.car_rating,
+                cd.year_to_start,
+                cd.riders,
+                cd.year_to_work,
+                cd.target_reg,
+                cd.target_class,
+                COALESCE(ra.total_rides, 0) AS total_rides,
+                COALESCE(ra.average_rating, 0) AS average_rating,
+                COALESCE(ra.min_rating, 0) AS min_rating,
+                COALESCE(ra.total_ride_duration, 0) AS total_ride_duration,
+                COALESCE(ra.average_ride_duration, 0) AS average_ride_duration,
+                COALESCE(ra.total_ride_cost, 0) AS total_ride_cost,
+                COALESCE(ra.average_speed, 0) AS average_speed,
+                COALESCE(ra.min_speed, 0) AS min_speed,
+                COALESCE(ra.average_max_speed, 0) AS average_max_speed,
+                COALESCE(ra.max_speed, 0) AS max_speed,
+                COALESCE(ra.total_distance, 0) AS total_distance,
+                COALESCE(ra.total_refuelings, 0) AS total_refuelings,
+                COALESCE(ra.average_ride_quality, 0) AS average_ride_quality,
+                COALESCE(ra.min_ride_quality, 0) AS min_ride_quality,
+                COALESCE(ra.average_deviation_normal, 0) AS average_deviation_normal
+            FROM
+                car_details cd
+            LEFT JOIN
+                ride_aggregates ra ON cd.car_id = ra.car_id;
+            """
 
         try:
-            connection = psycopg2.connect(
-                user=self.PG_USER,
-                password=self.PG_PASSWORD,
-                host=self.PG_HOST,
-                port=self.PG_PORT,
-                database=self.PG_DATABASE,
-            )
-            logging.info("The connection to the database was successfully established.")
-
-            self.data = pd.read_sql_query(query, connection)
-            logging.info("Data aggregation completed successfully.")
+            rows = await db.fetch_all(query)
+            self.data = pd.DataFrame(rows)
+            logging.info("Агрегация данных выполнена успешно.")
 
             self.data.fillna(
                 {
@@ -126,18 +124,14 @@ class Aggregation:
                 },
                 inplace=True,
             )
-            logging.info("Missing values ​​are filled in.")
+            logging.info("Отсутствующие значения заполнены.")
 
-        except (Exception, Error) as error:
-            logging.error(f"PostgreSQL Error: {error}")
-        finally:
-            if "connection" in locals() and connection:
-                connection.close()
-                logging.info("PostgreSQL connection is closed.")
+        except Exception as error:
+            logging.error(f"Ошибка при агрегации данных: {error}")
 
     def get_data(self) -> pd.DataFrame:
         if self.data is not None:
             return self.data
         else:
-            logging.warning("The data was not loaded.")
+            logging.warning("Данные не загружены.")
             return pd.DataFrame()
