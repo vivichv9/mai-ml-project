@@ -2,10 +2,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from globals import model
+from globals import CLASSIFICATION, REGRESSION
 from ml.db.db import database
 from ml.server import predict_router
-from ml.service.prediction import BrokeClassification
 
 load_dotenv()
 
@@ -23,7 +22,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     await database.connect()
-    model.load_model()
+    REGRESSION.load_model("regression")
+    CLASSIFICATION.load_model("classification")
 
 
 @app.on_event("shutdown")

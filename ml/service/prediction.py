@@ -1,12 +1,12 @@
 import pandas as pd
-from catboost import CatBoostClassifier, Pool
+from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor, Pool
 from sklearn.model_selection import train_test_split
 
 RANDOM_STATE = 42
 
 
-class BrokeClassification:
-    def __init__(self, data: pd.DataFrame, target: pd.DataFrame):
+class BrokePredictor:
+    def __init__(self, data: pd.DataFrame, target: pd.DataFrame, model: CatBoost):
         """
         Args:
             data (pd.DataFrame): features for train model
@@ -32,7 +32,7 @@ class BrokeClassification:
         self.target = y_train
         self.data_test = X_test
         self.target_test = y_test
-        self.model = None
+        self.model = model
         self.categorical_features = cat_features
 
     def param_selection(self):
@@ -42,11 +42,15 @@ class BrokeClassification:
         Returns:
             Dictionary with best model parameters
         """
+        if self.model is None:
+            raise ValueError("model is none")
+
+        if self.data is None or self.target is None:
+            raise ValueError("train data is None")
 
         train_data = Pool(
             data=self.data, label=self.target, cat_features=self.categorical_features
         )
-        # print(train_data.get_features_name())
 
         param_grid = {
             "iterations": [100],
@@ -56,15 +60,7 @@ class BrokeClassification:
             "border_count": [16],
         }
 
-        model = CatBoostClassifier(
-            loss_function="MultiClass",
-            silent=False,
-        )
-
-        grid_search_result = model.grid_search(
-            param_grid, train_data, cv=3, verbose=True
-        )
-        self.model = model
+        self.model.grid_search(param_grid, train_data, cv=3, verbose=True)
 
     def train(self):
         self.model.fit(self.data, self.target, cat_features=self.categorical_features)
@@ -76,9 +72,9 @@ class BrokeClassification:
         prediction = self.model.predict(data=data, prediction_type="Class")
         return prediction
 
-    def save_model(self):
-        self.model.save_model("./ml/trained_model/classification.cbm", format="cbm")
+    def save_model(self, model_name: str):
+        self.model.save_model(f"./ml/trained_model/{model_name}.cbm", format="cbm")
 
-    def load_model(self):
+    def load_model(self, model_name: str):
         self.model = CatBoostClassifier()
-        self.model.load_model("./ml/trained_model/classification.cbm")
+        self.model.load_model(f"./ml/trained_model/{model_name}.cbm")
