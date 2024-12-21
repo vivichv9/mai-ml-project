@@ -10,4 +10,4 @@ base_classification_model = CatBoostClassifier(
 base_regression_model = CatBoostRegressor(loss_function="RMSE", silent=False)
 
 CLASSIFICATION = BrokePredictor(None, None, model=base_classification_model)
-REGRESSION = BrokenPipeError(None, None, model=base_regression_model)
+REGRESSION = BrokePredictor(None, None, model=base_regression_model)

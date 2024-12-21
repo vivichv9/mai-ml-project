@@ -2,9 +2,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from globals import CLASSIFICATION, REGRESSION
 from ml.db.db import database
 from ml.server import predict_router
+from model_env import CLASSIFICATION, REGRESSION
 
 load_dotenv()
 

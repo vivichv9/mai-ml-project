@@ -54,7 +54,8 @@ class Aggregation:
 
         try:
             rows = await self.db.fetch_all(query)
-            self.data = pd.DataFrame(rows)
+            train = [dict(record._row) for record in rows]
+            self.data = pd.DataFrame(train)
             logging.info("Агрегация данных выполнена успешно.")
 
         except Exception as error:

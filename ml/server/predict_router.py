@@ -3,8 +3,8 @@ from databases import Database
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 
-from globals import CLASSIFICATION, REGRESSION
 from ml.db.db import get_db
+from model_env import CLASSIFICATION, REGRESSION
 
 router = APIRouter()
 
