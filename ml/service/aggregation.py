@@ -14,7 +14,6 @@ class Aggregation:
         )
 
     async def aggregate_data(self):
-        await self.db.connect()
         query = """
                     with cars_aggregate as (select
                     car_id,
@@ -57,11 +56,9 @@ class Aggregation:
             rows = await self.db.fetch_all(query)
             self.data = pd.DataFrame(rows)
             logging.info("Агрегация данных выполнена успешно.")
-            await self.db.disconnect()
 
         except Exception as error:
             logging.error(f"Ошибка при агрегации данных: {error}")
-            await self.db.disconnect()
 
     def get_data(self) -> pd.DataFrame:
         if self.data is not None:
