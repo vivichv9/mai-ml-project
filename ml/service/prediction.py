@@ -1,5 +1,7 @@
+import optuna
 import pandas as pd
 from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor, Pool
+from sklearn.metrics import mean_squared_error, recall_score
 from sklearn.model_selection import train_test_split
 
 RANDOM_STATE = 42
@@ -56,31 +58,46 @@ class BrokePredictor:
             params = {
                 "iterations": trial.suggest_int("iterations", 100, 1000),
                 "depth": trial.suggest_int("depth", 1, 4),
-                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+                "learning_rate": trial.suggest_float(
+                    "learning_rate", 0.01, 0.3, log=True
+                ),
                 "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1, 10),
                 "border_count": trial.suggest_int("border_count", 16, 255),
                 "random_seed": RANDOM_STATE,
             }
 
-            model = self.model.set_params(**params)
+            model_type = type(self.model)
+            model = None
+
+            if model_type is CatBoostRegressor:
+                model = CatBoostRegressor(loss_function="RMSE", **params, silent=True)
+
+            else:
+                model = CatBoostClassifier(
+                    loss_function="MultiClass", **params, silent=True
+                )
 
             model.fit(train_data, verbose=0)
             preds = model.predict(self.data_test)
-            model_type = type(self.model)
 
             if model_type is CatBoostRegressor:
-                return mean_squared_error(self.target_test, preds, squared=False)
+                return mean_squared_error(self.target_test, preds) ** 0.5
 
             return recall_score(self.target_test, preds, average="macro")
 
-        study = optuna.create_study(direction="maximize")
-        study.optimize(objective, n_trials=n_trials)
+        model_type = type(self.model)
+        study = None
+        if model_type is CatBoostRegressor:
+            study = optuna.create_study(direction="minimize")
+        else:
+            study = optuna.create_study(direction="maximize")
+
+        study.optimize(objective, n_trials=15)
 
         best_params = study.best_params
         best_params["random_seed"] = RANDOM_STATE
 
-        self.model = self.model.set_params(**best_params)
-
+        self.model.set_params(**best_params)
 
     def train(self):
         self.model.fit(self.data, self.target, cat_features=self.categorical_features)
