@@ -55,39 +55,32 @@ class BrokePredictor:
         def objective(trial):
             params = {
                 "iterations": trial.suggest_int("iterations", 100, 1000),
-                "depth": trial.suggest_int("depth", 1, 10),
+                "depth": trial.suggest_int("depth", 1, 4),
                 "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
                 "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1, 10),
                 "border_count": trial.suggest_int("border_count", 16, 255),
                 "random_seed": RANDOM_STATE,
             }
 
-            model = CatBoostClassifier(
-                loss_function="MultiClass",
-                eval_metric="Recall",
-                verbose=0,
-                **params
-            )
+            model = self.model.set_params(**params)
 
             model.fit(train_data, verbose=0)
             preds = model.predict(self.data_test)
-            recall = recall_score(self.target_test, preds, average="macro")
+            model_type = type(self.model)
 
-            return recall
+            if model_type is CatBoostRegressor:
+                return mean_squared_error(self.target_test, preds, squared=False)
+
+            return recall_score(self.target_test, preds, average="macro")
 
         study = optuna.create_study(direction="maximize")
         study.optimize(objective, n_trials=n_trials)
 
         best_params = study.best_params
         best_params["random_seed"] = RANDOM_STATE
-        self.model = CatBoostClassifier(
-            loss_function="MultiClass",
-            eval_metric="Recall",
-            verbose=0,
-            **best_params
-        )
 
-        return best_params
+        self.model = self.model.set_params(**best_params)
+
 
     def train(self):
         self.model.fit(self.data, self.target, cat_features=self.categorical_features)
