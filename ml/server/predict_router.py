@@ -2,45 +2,33 @@ import pandas as pd
 from databases import Database
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
-
+from ml.service.aggregation import Aggregation
 from ml.db.db import get_db
 from model_env import CLASSIFICATION, REGRESSION
+from catboost import Pool
 
 router = APIRouter()
 
 
 @router.get("/predict")
 async def prediction(db: Database = Depends(get_db)):
-    # TODO select data from database
+    agg = Aggregation()
+    await agg.aggregate_data_test()
 
-    train = await db.fetch_all("SELECT * FROM public.car_train")
+    data = agg.get_data()
+    data.drop(['car_id'], axis=1, inplace=True)
+    cat_features = ["model", "car_type", "fuel_type"]
+    data = Pool(data=data, cat_features=cat_features)
 
-    if train is None:
-        raise HTTPException(
-            status_code=500, detail="Server Error: Database response is empty!"
-        )
+    predicted_class = CLASSIFICATION.prediction(data)
+    predicted_value = REGRESSION.prediction(data)
 
-    train_data = [dict(record._row) for record in train]
-    train_df = pd.DataFrame(
-        train_data,
-        columns=[
-            "car_id",
-            "model",
-            "car_type",
-            "fuel_type",
-            "car_rating",
-            "year_to_start",
-            "riders",
-            "year_to_work",
-            "target_reg",
-            "target_class",
-        ],
-    )
+    predicted_class = predicted_class.tolist() if hasattr(predicted_class, "tolist") else predicted_class
+    predicted_value = predicted_value.tolist() if hasattr(predicted_value, "tolist") else predicted_value
 
-    train_x = train_df.drop(["target_reg", "target_class"], axis=1)
-    predicted_class = CLASSIFICATION.prediction(train_x)
-    predicted_value = REGRESSION.predicton(train_x)
+    predictions = [
+        {"predicted_class": cls, "predicted_value": value}
+        for cls, value in zip(predicted_class, predicted_value)
+    ]
 
-    # TODO insert predicted values to database
-
-    return {"predictions amount": predicted_class.shape[0]}
+    return {"predictions": predictions}

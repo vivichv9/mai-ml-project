@@ -3,8 +3,7 @@ import asyncio
 from ml.db.db import get_db
 from ml.service.aggregation import Aggregation
 from ml.service.prediction import BrokePredictor
-from model_env import base_classification_model, base_regression_model
-
+from catboost import CatBoostRegressor, CatBoostClassifier
 
 async def main():
     db = get_db()
@@ -17,41 +16,41 @@ async def main():
     classification_target = train_df["target_class"]
     regression_target = train_df["target_reg"].astype(float)
     train_df.drop(
-        ["target_class", "target_reg", "car_id", "car_number", "is_rented"],
+        ["target_class", "target_reg", "car_id"],
         axis=1,
         inplace=True,
     )
-    train_df = train_df.reset_index()
-    train_df[["average_rating"]] = train_df[["average_rating"]].astype(float)
-    train_df[["min_rating"]] = train_df[["min_rating"]].astype(float)
-    train_df[["average_ride_duration"]] = train_df[["average_ride_duration"]].astype(
+    train_df[["avg_rating"]] = train_df[["avg_rating"]].astype(float)
+    train_df[["avg_ride_duration"]] = train_df[["avg_ride_duration"]].astype(float)
+    train_df[["min_ride_duration"]] = train_df[["min_ride_duration"]].astype(
         float
     )
-    train_df[["average_speed"]] = train_df[["average_speed"]].astype(float)
-    train_df[["min_speed"]] = train_df[["min_speed"]].astype(float)
-    train_df[["average_max_speed"]] = train_df[["average_max_speed"]].astype(float)
-    train_df[["max_speed"]] = train_df[["max_speed"]].astype(float)
-    train_df[["total_distance"]] = train_df[["total_distance"]].astype(float)
-    train_df[["average_ride_quality"]] = train_df[["average_ride_quality"]].astype(
+    train_df[["max_ride_duration"]] = train_df[["max_ride_duration"]].astype(float)
+    train_df[["avg_ride_cost"]] = train_df[["avg_ride_cost"]].astype(float)
+    train_df[["avg_speed"]] = train_df[["avg_speed"]].astype(float)
+    train_df[["avg_speed_max"]] = train_df[["avg_speed_max"]].astype(float)
+    train_df[["sum_stop_times"]] = train_df[["sum_stop_times"]].astype(float)
+    train_df[["total_distance"]] = train_df[["total_distance"]].astype(
         float
     )
-    train_df[["min_ride_quality"]] = train_df[["min_ride_quality"]].astype(float)
-    train_df[["average_deviation_normal"]] = train_df[
-        ["average_deviation_normal"]
+    train_df[["total_refueling"]] = train_df[["total_refueling"]].astype(float)
+    train_df[["avg_user_rating"]] = train_df[
+        ["avg_user_rating"]
     ].astype(float)
-    train_df[["car_rating"]] = train_df[["car_rating"]].astype(float)
+    train_df[["accidents"]] = train_df[["accidents"]].astype(float)
 
     classification_model = BrokePredictor(
-        train_df, classification_target, base_classification_model
+        train_df, classification_target, CatBoostClassifier(
+        loss_function="MultiClass",
+        silent=False,
+        )       
     )
-    classification_model.param_selection()
     classification_model.train()
     classification_model.save_model("classification")
 
     regression_model = BrokePredictor(
-        train_df, regression_target, base_regression_model
+        train_df, regression_target, CatBoostRegressor(loss_function="MAE", silent=False)
     )
-    regression_model.param_selection()
     regression_model.train()
     regression_model.save_model("regression")
 
