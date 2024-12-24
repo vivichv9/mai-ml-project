@@ -16,7 +16,7 @@ class Aggregation:
     async def aggregate_data(self):
         query = """
             WITH subq AS (
-	select 
+	select
 		car_id,
 		AVG(rating) as avg_rating,
 		AVG(ride_duration) as avg_ride_duration,
@@ -30,7 +30,7 @@ class Aggregation:
 		SUM(refueling) as total_refueling,
 		AVG(user_rating) as avg_user_rating,
 		AVG(user_time_accident) as accidents
-	from 
+	from
 		rides_info ri join driver_info di USING(user_id)
 	group by car_id
 )
@@ -45,12 +45,12 @@ select * from car_train join subq USING(car_id)
             logging.info("Агрегация данных выполнена успешно.")
 
         except Exception as error:
-            logging.error(f"Ошибка при агрегации данных: {error}") 
+            logging.error(f"Ошибка при агрегации данных: {error}")
 
     async def aggregate_data_test(self):
         query = """
         WITH subq AS (
-            select 
+            select
                 car_id,
                 AVG(rating) as avg_rating,
                 AVG(ride_duration) as avg_ride_duration,
@@ -64,7 +64,7 @@ select * from car_train join subq USING(car_id)
                 SUM(refueling) as total_refueling,
                 AVG(user_rating) as avg_user_rating,
                 AVG(user_time_accident) as accidents
-            from 
+            from
                 rides_info ri join driver_info di USING(user_id)
             group by car_id
         )
@@ -79,7 +79,7 @@ select * from car_train join subq USING(car_id)
             logging.info("Агрегация данных выполнена успешно.")
 
         except Exception as error:
-            logging.error(f"Ошибка при агрегации данных: {error}") 
+            logging.error(f"Ошибка при агрегации данных: {error}")
 
     def get_data(self) -> pd.DataFrame:
         if self.data is not None:
