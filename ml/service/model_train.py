@@ -1,6 +1,5 @@
 import asyncio
 
-
 from ml.db.db import get_db
 from ml.service.aggregation import Aggregation
 from ml.service.prediction import BrokeClassifier, BrokeRegressor
@@ -39,7 +38,7 @@ async def main():
     classification_model = BrokeClassifier(train_df, classification_target)
     classification_model.train()
     classification_model.save_model()
-    
+
     regression_model = BrokeRegressor(train_df, regression_target)
     regression_model.train()
     regression_model.save_model()

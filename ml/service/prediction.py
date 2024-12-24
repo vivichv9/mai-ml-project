@@ -4,11 +4,19 @@ from typing import Dict
 import optuna
 import pandas as pd
 from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor, Pool
-from sklearn.metrics import (accuracy_score, classification_report,
-                             confusion_matrix, explained_variance_score,
-                             f1_score, mean_absolute_error, mean_squared_error,
-                             precision_score, r2_score, recall_score,
-                             roc_auc_score)
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    explained_variance_score,
+    f1_score,
+    mean_absolute_error,
+    mean_squared_error,
+    precision_score,
+    r2_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 
@@ -160,7 +168,7 @@ class BrokePredictor:
         eval_pool = Pool(
             self.data_test, self.target_test, cat_features=self.categorical_features
         )
-        
+
         print(self.data_test.dtypes)
 
         self.model.fit(
@@ -389,13 +397,9 @@ class BrokeClassifier(BrokePredictor):
         metrics = {}
         metrics["Accuracy"] = accuracy_score(self.target_test, preds)
         metrics["Recall"] = recall_score(self.target_test, preds, average="macro")
-        metrics["Precision"] = precision_score(
-            self.target_test, preds, average="macro"
-        )
+        metrics["Precision"] = precision_score(self.target_test, preds, average="macro")
         metrics["F1 Score"] = f1_score(self.target_test, preds, average="macro")
-        metrics["Confusion Matrix"] = confusion_matrix(
-            self.target_test, preds
-        ).tolist()
+        metrics["Confusion Matrix"] = confusion_matrix(self.target_test, preds).tolist()
         metrics["Classification Report"] = classification_report(
             self.target_test, preds, output_dict=True
         )
@@ -411,9 +415,7 @@ class BrokeClassifier(BrokePredictor):
                 else:
                     file.write(f"{metric}: {value}\n")
 
-        print(
-            f"\n--- Метрики модели ('Регрессия') ---"
-        )
+        print(f"\n--- Метрики модели ('Регрессия') ---")
         for metric, value in metrics.items():
             if isinstance(value, dict):
                 print(f"{metric}:")
