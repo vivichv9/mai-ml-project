@@ -11,19 +11,14 @@ from ml.service.aggregation import Aggregation, logging
 router = APIRouter()
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-async def upsert_car_predictions(
-    data,
-    db: Database
-):
 
+async def upsert_car_predictions(data, db: Database):
     if not data:
         logging.warning("Нет данных.")
         return
-
 
     query = """
         INSERT INTO cars_predicted_data (car_id, target_reg, target_class)
@@ -47,14 +42,17 @@ async def prediction(db: Database = Depends(get_db)):
     await agg.train_aggregate()
 
     data = agg.get_data()
-    car_ids = data['car_id'].tolist()
+    car_ids = data["car_id"].tolist()
     data.drop(["car_id"], axis=1, inplace=True)
     cat_features = ["model", "car_type", "fuel_type"]
     data = Pool(data=data, cat_features=cat_features)
 
+    logging.info("Prediction started!")
     predicted_class = CLASSIFICATION.prediction(data)
     predicted_value = REGRESSION.prediction(data)
+    logging.info("Prediction finished!")
 
+    logging.info("Data processing started!")
     predicted_class = (
         predicted_class.tolist()
         if hasattr(predicted_class, "tolist")
@@ -68,30 +66,23 @@ async def prediction(db: Database = Depends(get_db)):
     )
 
     predicted_class_flat = []
-    for idx, cls in enumerate(predicted_class):
+    for _, cls in enumerate(predicted_class):
         predicted_class_flat.append(cls[0])
-
-    predictions = [
-        {"predicted_class": cls[0], "predicted_value": value}
-        for cls, value in zip(predicted_class, predicted_value)
-    ]
 
     car_predictions = []
     for cid, cls, val in zip(car_ids, predicted_class_flat, predicted_value):
-        car_pred = {
-            "car_id": cid,
-            "target_reg": val,
-            "target_class": cls
-        }
+        car_pred = {"car_id": cid, "target_reg": val, "target_class": cls}
         car_predictions.append(car_pred)
-
+    logging.info("Data processing finished!")
 
     try:
+        logging.info("Upsertion started!")
         await upsert_car_predictions(car_predictions, db)
+        logging.info("Upsertion finished!")
+
     except HTTPException as he:
         raise he
     except Exception as e:
         logging.error(f"Ошибка при upsert: {e}")
 
-
-    return {"predictions": predictions}
+    return "Data succesfully predicted and updated!"
