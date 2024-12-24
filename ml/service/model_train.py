@@ -21,6 +21,10 @@ async def main():
         axis=1,
         inplace=True,
     )
+    train_df[["car_rating"]] = train_df[["car_rating"]].astype(float)
+    train_df[["year_to_start"]] = train_df[["year_to_start"]].astype(float)
+    train_df[["riders"]] = train_df[["riders"]].astype(float)
+    train_df[["year_to_work"]] = train_df[["year_to_work"]].astype(float)
 
     train_df[["avg_rating"]] = train_df[["avg_rating"]].astype(float)
     train_df[["avg_ride_duration"]] = train_df[["avg_ride_duration"]].astype(float)
