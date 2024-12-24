@@ -29,6 +29,7 @@ async def prediction(db: Database = Depends(get_db)):
         if hasattr(predicted_class, "tolist")
         else predicted_class
     )
+
     predicted_value = (
         predicted_value.tolist()
         if hasattr(predicted_value, "tolist")

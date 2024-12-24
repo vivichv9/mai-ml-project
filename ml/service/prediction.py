@@ -169,8 +169,6 @@ class BrokePredictor:
             self.data_test, self.target_test, cat_features=self.categorical_features
         )
 
-        print(self.data_test.dtypes)
-
         self.model.fit(
             self.data,
             self.target,
@@ -262,7 +260,7 @@ class BrokeRegressor(BrokePredictor):
             return mae
 
         study = optuna.create_study(direction="minimize")
-        study.optimize(objective, n_trials=5)
+        study.optimize(objective, n_trials=50)
 
         best_params = study.best_params
 
@@ -294,7 +292,7 @@ class BrokeRegressor(BrokePredictor):
             self.target_test, preds
         )
 
-        filename = "regression_metrics.txt"
+        filename = "./metrics/regression_metrics.txt"
 
         with open(filename, "w") as file:
             for metric, value in metrics.items():
@@ -351,7 +349,7 @@ class BrokeClassifier(BrokePredictor):
                 ),
             }
 
-            params["eval_metric"] = "AUC"
+            params["eval_metric"] = "MultiClass"
             model = CatBoostClassifier(
                 **params,
                 cat_features=self.categorical_features,
@@ -364,14 +362,12 @@ class BrokeClassifier(BrokePredictor):
             model.fit(
                 train_data, eval_set=eval_pool, early_stopping_rounds=50, verbose=False
             )
-            preds = model.predict_proba(self.data_test)
-            score = roc_auc_score(
-                self.target_test, preds, multi_class="ovo", average="macro"
-            )
+            preds = model.predict(self.data_test)
+            score = recall_score(self.target_test, preds, average="macro")
             return score
 
         study = optuna.create_study(direction="maximize")
-        study.optimize(objective, n_trials=20)
+        study.optimize(objective, n_trials=50)
 
         best_params = study.best_params
 
@@ -393,8 +389,12 @@ class BrokeClassifier(BrokePredictor):
             raise ValueError("test data is none")
 
         preds = self.model.predict(self.data_test)
+        preds_proba = self.model.predict_proba(self.data_test)
 
         metrics = {}
+        metrics["RocAuc Score"] = roc_auc_score(
+            self.target_test, preds_proba, multi_class="ovo"
+        )
         metrics["Accuracy"] = accuracy_score(self.target_test, preds)
         metrics["Recall"] = recall_score(self.target_test, preds, average="macro")
         metrics["Precision"] = precision_score(self.target_test, preds, average="macro")
@@ -404,7 +404,7 @@ class BrokeClassifier(BrokePredictor):
             self.target_test, preds, output_dict=True
         )
 
-        filename = "classification_metrics.txt"
+        filename = "./metrics/classification_metrics.txt"
 
         with open(filename, "w") as file:
             for metric, value in metrics.items():
