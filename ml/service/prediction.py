@@ -43,12 +43,18 @@ class BrokePredictor:
                 include=["object", "category"]
             ).columns.tolist()
 
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_train, y_train, test_size=0.2, random_state=RANDOM_STATE
+        )
+
         self.data = X_train
         self.target = y_train
         self.data_test = X_test
         self.target_test = y_test
         self.model = model
         self.categorical_features = cat_features
+        self.data_val = X_val
+        self.target_val = y_val
 
     def generate_features(
         self, interaction_only=False, degree=2, binning=False, binning_bins=3
@@ -251,7 +257,7 @@ class BrokeRegressor(BrokePredictor):
             )
 
             eval_pool = Pool(
-                self.data_test, self.target_test, cat_features=self.categorical_features
+                self.data_val, self.target_val, cat_features=self.categorical_features
             )
             model.fit(train_data, eval_set=eval_pool, verbose=False)
             preds = model.predict(self.data_test)
@@ -357,7 +363,7 @@ class BrokeClassifier(BrokePredictor):
             )
 
             eval_pool = Pool(
-                self.data_test, self.target_test, cat_features=self.categorical_features
+                self.data_val, self.target_val, cat_features=self.categorical_features
             )
             model.fit(
                 train_data, eval_set=eval_pool, early_stopping_rounds=50, verbose=False

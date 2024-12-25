@@ -9,7 +9,7 @@ async def main():
     db = get_db()
     await db.connect()
     agg = Aggregation()
-    await agg.aggregate_data()
+    await agg.aggregate()
     await db.disconnect()
 
     train_df = agg.get_data()
