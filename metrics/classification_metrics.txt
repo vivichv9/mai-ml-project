@@ -1,0 +1,19 @@
+RocAuc Score: 0.9974302230283203
+Accuracy: 0.9529914529914529
+Recall: 0.9573349436392914
+Precision: 0.9563769563769563
+F1 Score: 0.9567422359714066
+Confusion Matrix: [[74, 0, 0, 0, 0, 0, 0, 0, 1], [0, 79, 0, 0, 0, 0, 0, 0, 0], [0, 0, 66, 0, 0, 14, 0, 0, 0], [0, 0, 0, 82, 0, 0, 0, 0, 0], [0, 0, 0, 0, 90, 0, 0, 0, 0], [0, 0, 18, 0, 0, 74, 0, 0, 0], [0, 0, 0, 0, 0, 0, 71, 0, 0], [0, 0, 0, 0, 0, 0, 0, 82, 0], [0, 0, 0, 0, 0, 0, 0, 0, 51]]
+Classification Report:
+  another_bug: {'precision': 1.0, 'recall': 0.9866666666666667, 'f1-score': 0.9932885906040269, 'support': 75.0}
+  break_bug: {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 79.0}
+  electro_bug: {'precision': 0.7857142857142857, 'recall': 0.825, 'f1-score': 0.8048780487804879, 'support': 80.0}
+  engine_check: {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 82.0}
+  engine_fuel: {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 90.0}
+  engine_ignition: {'precision': 0.8409090909090909, 'recall': 0.8043478260869565, 'f1-score': 0.8222222222222222, 'support': 92.0}
+  engine_overheat: {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 71.0}
+  gear_stick: {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 82.0}
+  wheel_shake: {'precision': 0.9807692307692307, 'recall': 1.0, 'f1-score': 0.9902912621359223, 'support': 51.0}
+  accuracy: 0.9529914529914529
+  macro avg: {'precision': 0.9563769563769563, 'recall': 0.9573349436392914, 'f1-score': 0.9567422359714066, 'support': 702.0}
+  weighted avg: {'precision': 0.9533333475641168, 'recall': 0.9529914529914529, 'f1-score': 0.9530430014403383, 'support': 702.0}
